@@ -12,6 +12,7 @@ import (
 
 	"github.com/hairyhenderson/go-fsimpl"
 	"github.com/hairyhenderson/gomplate/v3/internal/config"
+	"github.com/hairyhenderson/gomplate/v3/internal/datafs"
 	"github.com/hairyhenderson/gomplate/v3/internal/iohelpers"
 	"github.com/spf13/afero"
 
@@ -168,7 +169,7 @@ func TestParseNestedTemplates(t *testing.T) {
 		"foo.t": {Data: []byte("hello world"), Mode: 0o600},
 	}
 	fsp := fsimpl.WrappedFSProvider(fsys, "file")
-	ctx = ContextWithFSProvider(ctx, fsp)
+	ctx = datafs.ContextWithFSProvider(ctx, fsp)
 
 	// simple test with single template
 	u, _ := url.Parse("file:///foo.t")

@@ -11,8 +11,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/hairyhenderson/gomplate/v3/data"
 	"github.com/hairyhenderson/gomplate/v3/internal/config"
+	"github.com/hairyhenderson/gomplate/v3/internal/datafs"
 	"github.com/pkg/errors"
 )
 
@@ -47,7 +47,7 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	}
 
 	// if a custom Stdin is set in the config, inject it into the context now
-	ctx = data.ContextWithStdin(ctx, cfg.Stdin)
+	ctx = datafs.ContextWithStdin(ctx, cfg.Stdin)
 
 	opts := optionsFromConfig(cfg)
 	opts.Funcs = funcMap

@@ -70,14 +70,14 @@ type Config struct {
 	Experimental  bool `yaml:"experimental,omitempty"`
 }
 
-var experimentalCtxKey = struct{}{}
+type experimentalCtxKey struct{}
 
 func SetExperimental(ctx context.Context) context.Context {
-	return context.WithValue(ctx, experimentalCtxKey, true)
+	return context.WithValue(ctx, experimentalCtxKey{}, true)
 }
 
 func ExperimentalEnabled(ctx context.Context) bool {
-	v, ok := ctx.Value(experimentalCtxKey).(bool)
+	v, ok := ctx.Value(experimentalCtxKey{}).(bool)
 	return ok && v
 }
 

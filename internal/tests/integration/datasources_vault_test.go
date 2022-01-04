@@ -30,7 +30,7 @@ func setupDatasourcesVaultTest(t *testing.T) *vaultClient {
   capabilities = ["read","delete"]
 }`)
 	require.NoError(t, err)
-	err = vaultClient.vc.Sys().PutPolicy("listPol", `path "*" {
+	err = vaultClient.vc.Sys().PutPolicy("listpol", `path "*" {
   capabilities = ["read","list","delete"]
 }`)
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func startVault(t *testing.T) (*fs.Dir, *vaultClient) {
 		"-dev",
 		"-dev-root-token-id="+vaultRootToken,
 		"-dev-leased-kv",
-		"-log-level=err",
+		"-log-level=debug",
 		"-dev-listen-address="+vaultAddr,
 		"-config="+tmpDir.Join("config.json"),
 	)
@@ -84,6 +84,8 @@ func startVault(t *testing.T) (*fs.Dir, *vaultClient) {
 		result.Cmd.Wait()
 
 		result.Assert(t, icmd.Expected{ExitCode: 0})
+
+		t.Log(result.Combined())
 
 		// restore old token if it was backed up
 		u, _ := user.Current()

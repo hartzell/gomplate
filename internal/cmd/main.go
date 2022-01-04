@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"os/signal"
 
-	"github.com/hairyhenderson/go-fsimpl/filefs"
 	"github.com/hairyhenderson/gomplate/v3"
 	"github.com/hairyhenderson/gomplate/v3/env"
 	"github.com/hairyhenderson/gomplate/v3/version"
@@ -167,12 +166,9 @@ func InitFlags(command *cobra.Command) {
 func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	ctx = initLogger(ctx, stderr)
 
-	// inject a default filesystem provider for file:// URLs
-	// TODO: expand this to support other schemes!
-	if gomplate.FSProviderFromContext(ctx) == nil {
-		// allow this to be overridden by tests
-		ctx = gomplate.ContextWithFSProvider(ctx, filefs.FS)
-	}
+	// inject a go-fsimpl filesystem provider if it hasn't already been
+	// overridden
+	ctx = injectFSProviders(ctx)
 
 	command := NewGomplateCmd()
 	InitFlags(command)

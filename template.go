@@ -13,6 +13,7 @@ import (
 
 	"github.com/hairyhenderson/go-fsimpl"
 	"github.com/hairyhenderson/gomplate/v3/internal/config"
+	"github.com/hairyhenderson/gomplate/v3/internal/datafs"
 	"github.com/hairyhenderson/gomplate/v3/internal/iohelpers"
 	"github.com/hairyhenderson/gomplate/v3/tmpl"
 
@@ -47,23 +48,6 @@ func copyFuncMap(funcMap template.FuncMap) template.FuncMap {
 	return newFuncMap
 }
 
-var fsProviderCtxKey = struct{}{}
-
-// ContextWithFSProvider returns a context with the given FSProvider. Should
-// only be used in tests.
-func ContextWithFSProvider(ctx context.Context, fsp fsimpl.FSProvider) context.Context {
-	return context.WithValue(ctx, fsProviderCtxKey, fsp)
-}
-
-// FSProviderFromContext returns the FSProvider from the context, if any
-func FSProviderFromContext(ctx context.Context) fsimpl.FSProvider {
-	if fsp, ok := ctx.Value(fsProviderCtxKey).(fsimpl.FSProvider); ok {
-		return fsp
-	}
-
-	return nil
-}
-
 // parseTemplate - parses text as a Go template with the given name and options
 func parseTemplate(ctx context.Context, name, text string, funcs template.FuncMap, tmplctx interface{}, nested config.Templates, leftDelim, rightDelim string) (tmpl *template.Template, err error) {
 	tmpl = template.New(name)
@@ -89,7 +73,7 @@ func parseTemplate(ctx context.Context, name, text string, funcs template.FuncMa
 }
 
 func parseNestedTemplates(ctx context.Context, nested config.Templates, tmpl *template.Template) error {
-	fsp := FSProviderFromContext(ctx)
+	fsp := datafs.FSProviderFromContext(ctx)
 
 	for alias, n := range nested {
 		u := *n.URL

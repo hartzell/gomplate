@@ -11,13 +11,13 @@ import (
 	"testing/fstest"
 
 	"github.com/hairyhenderson/go-fsimpl"
-	"github.com/hairyhenderson/gomplate/v3/data"
+	"github.com/hairyhenderson/gomplate/v3/internal/datafs"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRenderTemplate(t *testing.T) {
 	fsys := fstest.MapFS{}
-	ctx := ContextWithFSProvider(context.Background(),
+	ctx := datafs.ContextWithFSProvider(context.Background(),
 		fsimpl.WrappedFSProvider(fsys, "mem"))
 
 	// no options - built-in function
@@ -42,7 +42,7 @@ func TestRenderTemplate(t *testing.T) {
 			"world": {URL: wu},
 		},
 	})
-	ctx = data.ContextWithStdin(ctx, strings.NewReader("hello"))
+	ctx = datafs.ContextWithStdin(ctx, strings.NewReader("hello"))
 	out = &bytes.Buffer{}
 	err = tr.Render(ctx, "test", `{{ .hi | toUpper }} {{ (ds "world") | toUpper }}`, out)
 	assert.NoError(t, err)
