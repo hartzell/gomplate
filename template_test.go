@@ -3,30 +3,33 @@ package gomplate
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
+	"io/fs"
 	"net/url"
-	"os"
 	"testing"
 	"testing/fstest"
 	"text/template"
 
+	"github.com/hack-pad/hackpadfs"
+	"github.com/hack-pad/hackpadfs/mem"
 	"github.com/hairyhenderson/go-fsimpl"
 	"github.com/hairyhenderson/gomplate/v3/internal/config"
 	"github.com/hairyhenderson/gomplate/v3/internal/iohelpers"
-	"github.com/spf13/afero"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOpenOutFile(t *testing.T) {
-	origfs := aferoFS
-	defer func() { aferoFS = origfs }()
-	aferoFS = afero.NewMemMapFs()
-	_ = aferoFS.Mkdir("/tmp", 0777)
+	var fsys fs.FS
+	fsys, _ = mem.NewFS()
+	fsys, _ = wrapWdFS(fsys)
+
+	_ = hackpadfs.Mkdir(fsys, "/tmp", 0777)
 
 	cfg := &config.Config{Stdout: &bytes.Buffer{}}
-	f, err := openOutFile("/tmp/foo", 0755, 0644, false, nil, false)
+	f, err := openOutFile(fsys, "/tmp/foo", 0755, 0644, false, nil, false)
 	assert.NoError(t, err)
 
 	wc, ok := f.(io.WriteCloser)
@@ -34,13 +37,13 @@ func TestOpenOutFile(t *testing.T) {
 	err = wc.Close()
 	assert.NoError(t, err)
 
-	i, err := aferoFS.Stat("/tmp/foo")
+	i, err := hackpadfs.Stat(fsys, "/tmp/foo")
 	assert.NoError(t, err)
 	assert.Equal(t, iohelpers.NormalizeFileMode(0644), i.Mode())
 
 	out := &bytes.Buffer{}
 
-	f, err = openOutFile("-", 0755, 0644, false, out, false)
+	f, err = openOutFile(fsys, "-", 0755, 0644, false, out, false)
 	assert.NoError(t, err)
 	assert.Equal(t, cfg.Stdout, f)
 }
@@ -48,21 +51,19 @@ func TestOpenOutFile(t *testing.T) {
 func TestGatherTemplates(t *testing.T) {
 	ctx := context.Background()
 
-	origfs := aferoFS
-	defer func() { aferoFS = origfs }()
-	aferoFS = afero.NewMemMapFs()
-	afero.WriteFile(aferoFS, "foo", []byte("bar"), 0600)
-
-	afero.WriteFile(aferoFS, "in/1", []byte("foo"), 0644)
-	afero.WriteFile(aferoFS, "in/2", []byte("bar"), 0644)
-	afero.WriteFile(aferoFS, "in/3", []byte("baz"), 0644)
+	fsys, _ := mem.NewFS()
+	_ = hackpadfs.WriteFullFile(fsys, "foo", []byte("bar"), 0o600)
+	_ = hackpadfs.Mkdir(fsys, "in", 0o777)
+	_ = hackpadfs.WriteFullFile(fsys, "in/1", []byte("foo"), 0o644)
+	_ = hackpadfs.WriteFullFile(fsys, "in/2", []byte("bar"), 0o644)
+	_ = hackpadfs.WriteFullFile(fsys, "in/3", []byte("baz"), 0o644)
 
 	cfg := &config.Config{
 		Stdin:  &bytes.Buffer{},
 		Stdout: &bytes.Buffer{},
 	}
 	cfg.ApplyDefaults()
-	templates, err := gatherTemplates(ctx, cfg, nil)
+	templates, err := gatherTemplates(ctx, fsys, cfg, nil)
 	assert.NoError(t, err)
 	assert.Len(t, templates, 1)
 
@@ -71,13 +72,13 @@ func TestGatherTemplates(t *testing.T) {
 		Stdout: &bytes.Buffer{},
 	}
 	cfg.ApplyDefaults()
-	templates, err = gatherTemplates(ctx, cfg, nil)
+	templates, err = gatherTemplates(ctx, fsys, cfg, nil)
 	assert.NoError(t, err)
 	assert.Len(t, templates, 1)
 	assert.Equal(t, "foo", templates[0].Text)
 	assert.Equal(t, cfg.Stdout, templates[0].Writer)
 
-	templates, err = gatherTemplates(ctx, &config.Config{
+	templates, err = gatherTemplates(ctx, fsys, &config.Config{
 		Input:       "foo",
 		OutputFiles: []string{"out"},
 	}, nil)
@@ -86,24 +87,24 @@ func TestGatherTemplates(t *testing.T) {
 	// assert.Equal(t, iohelpers.NormalizeFileMode(0644), templates[0].mode)
 
 	// out file is created only on demand
-	_, err = aferoFS.Stat("out")
+	_, err = hackpadfs.Stat(fsys, "out")
 	assert.Error(t, err)
-	assert.True(t, os.IsNotExist(err))
+	assert.True(t, errors.Is(err, fs.ErrNotExist))
 
 	_, err = templates[0].Writer.Write([]byte("hello world"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	info, err := aferoFS.Stat("out")
+	info, err := hackpadfs.Stat(fsys, "out")
 	require.NoError(t, err)
 	assert.Equal(t, iohelpers.NormalizeFileMode(0644), info.Mode())
-	aferoFS.Remove("out")
+	hackpadfs.Remove(fsys, "out")
 
 	cfg = &config.Config{
 		InputFiles:  []string{"foo"},
 		OutputFiles: []string{"out"},
 		Stdout:      &bytes.Buffer{},
 	}
-	templates, err = gatherTemplates(ctx, cfg, nil)
+	templates, err = gatherTemplates(ctx, fsys, cfg, nil)
 	assert.NoError(t, err)
 	assert.Len(t, templates, 1)
 	assert.Equal(t, "bar", templates[0].Text)
@@ -113,10 +114,10 @@ func TestGatherTemplates(t *testing.T) {
 	_, err = templates[0].Writer.Write([]byte("hello world"))
 	assert.NoError(t, err)
 
-	info, err = aferoFS.Stat("out")
+	info, err = hackpadfs.Stat(fsys, "out")
 	assert.NoError(t, err)
 	assert.Equal(t, iohelpers.NormalizeFileMode(0600), info.Mode())
-	aferoFS.Remove("out")
+	hackpadfs.Remove(fsys, "out")
 
 	cfg = &config.Config{
 		InputFiles:  []string{"foo"},
@@ -124,7 +125,7 @@ func TestGatherTemplates(t *testing.T) {
 		OutMode:     "755",
 		Stdout:      &bytes.Buffer{},
 	}
-	templates, err = gatherTemplates(ctx, cfg, nil)
+	templates, err = gatherTemplates(ctx, fsys, cfg, nil)
 	assert.NoError(t, err)
 	assert.Len(t, templates, 1)
 	assert.Equal(t, "bar", templates[0].Text)
@@ -134,30 +135,28 @@ func TestGatherTemplates(t *testing.T) {
 	_, err = templates[0].Writer.Write([]byte("hello world"))
 	assert.NoError(t, err)
 
-	info, err = aferoFS.Stat("out")
-	assert.NoError(t, err)
+	info, err = hackpadfs.Stat(fsys, "out")
+	require.NoError(t, err)
 	assert.Equal(t, iohelpers.NormalizeFileMode(0755), info.Mode())
-	aferoFS.Remove("out")
+	hackpadfs.Remove(fsys, "out")
 
-	templates, err = gatherTemplates(ctx, &config.Config{
+	templates, err = gatherTemplates(ctx, fsys, &config.Config{
 		InputDir:  "in",
 		OutputDir: "out",
 	}, simpleNamer("out"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, templates, 3)
 	assert.Equal(t, "foo", templates[0].Text)
-	aferoFS.Remove("out")
+	hackpadfs.Remove(fsys, "out")
 }
 
 func TestCreateOutFile(t *testing.T) {
-	origfs := aferoFS
-	defer func() { aferoFS = origfs }()
-	aferoFS = afero.NewMemMapFs()
-	_ = aferoFS.Mkdir("in", 0755)
+	fsys, _ := mem.NewFS()
+	_ = hackpadfs.Mkdir(fsys, "in", 0755)
 
-	_, err := createOutFile("in", 0755, 0644, false)
+	_, err := createOutFile(fsys, "in", 0755, 0644, false)
 	assert.Error(t, err)
-	assert.IsType(t, &os.PathError{}, err)
+	assert.IsType(t, &fs.PathError{}, err)
 }
 
 func TestParseNestedTemplates(t *testing.T) {

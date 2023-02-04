@@ -12,6 +12,7 @@ require (
 	github.com/go-git/go-git/v5 v5.5.2
 	github.com/google/uuid v1.3.0
 	github.com/gosimple/slug v1.13.1
+	github.com/hack-pad/hackpadfs v0.2.0
 	github.com/hairyhenderson/go-fsimpl v0.0.0-20230121155226-8aa24800449d
 	github.com/hairyhenderson/toml v0.4.2-0.20210923231440-40456b8e66cf
 	github.com/hashicorp/consul/api v1.18.0
@@ -25,7 +26,6 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	github.com/ugorji/go/codec v1.2.8
-	github.com/zealic/xignore v0.3.3
 	go4.org/netipx v0.0.0-20230125063823-8449b0a6169f
 	gocloud.dev v0.28.0
 	golang.org/x/crypto v0.5.0
@@ -36,6 +36,10 @@ require (
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317
 	k8s.io/client-go v0.26.1
 )
+
+require github.com/zealic/xignore v0.3.3
+
+replace github.com/zealic/xignore => github.com/hairyhenderson/xignore v0.3.3-0.20230130015542-bd58304d08cd
 
 // TODO: replace with gopkg.in/yaml.v3 after https://github.com/go-yaml/yaml/pull/862
 // is merged

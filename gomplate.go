@@ -11,6 +11,7 @@ import (
 	"text/template"
 	"time"
 
+	hackpados "github.com/hack-pad/hackpadfs/os"
 	"github.com/hairyhenderson/gomplate/v3/data"
 	"github.com/hairyhenderson/gomplate/v3/internal/config"
 )
@@ -55,7 +56,11 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	start := time.Now()
 
 	namer := chooseNamer(cfg, tr)
-	tmpl, err := gatherTemplates(ctx, cfg, namer)
+	fsys, err := wrapWdFS(hackpados.NewFS())
+	if err != nil {
+		return err
+	}
+	tmpl, err := gatherTemplates(ctx, fsys, cfg, namer)
 	Metrics.GatherDuration = time.Since(start)
 	if err != nil {
 		Metrics.Errors++
