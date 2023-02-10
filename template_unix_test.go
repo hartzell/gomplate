@@ -10,6 +10,7 @@ import (
 	"github.com/hack-pad/hackpadfs"
 	"github.com/hack-pad/hackpadfs/mem"
 	"github.com/hairyhenderson/gomplate/v3/internal/config"
+	"github.com/hairyhenderson/gomplate/v3/internal/datafs"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ func TestWalkDir(t *testing.T) {
 
 	var fsys fs.FS
 	fsys, _ = mem.NewFS()
-	fsys, _ = wrapWdFS(fsys)
+	fsys, _ = datafs.WrapWdFS(fsys)
 
 	cfg := &config.Config{}
 

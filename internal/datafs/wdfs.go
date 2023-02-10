@@ -1,4 +1,4 @@
-package gomplate
+package datafs
 
 import (
 	"fmt"
@@ -34,7 +34,7 @@ var (
 	_ hackpadfs.RemoveFS   = &wdFS{}
 )
 
-func wrapWdFS(fsys fs.FS) (fs.FS, error) {
+func WrapWdFS(fsys fs.FS) (fs.FS, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("getwd: %w", err)

@@ -15,6 +15,7 @@ import (
 	"github.com/hack-pad/hackpadfs/mem"
 	"github.com/hairyhenderson/go-fsimpl"
 	"github.com/hairyhenderson/gomplate/v3/internal/config"
+	"github.com/hairyhenderson/gomplate/v3/internal/datafs"
 	"github.com/hairyhenderson/gomplate/v3/internal/iohelpers"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ import (
 func TestOpenOutFile(t *testing.T) {
 	var fsys fs.FS
 	fsys, _ = mem.NewFS()
-	fsys, _ = wrapWdFS(fsys)
+	fsys, _ = datafs.WrapWdFS(fsys)
 
 	_ = hackpadfs.Mkdir(fsys, "/tmp", 0777)
 

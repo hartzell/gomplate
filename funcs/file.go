@@ -2,11 +2,12 @@ package funcs
 
 import (
 	"context"
+	"io/fs"
 	"os"
 
+	"github.com/hack-pad/hackpadfs"
 	"github.com/hairyhenderson/gomplate/v3/conv"
 	"github.com/hairyhenderson/gomplate/v3/file"
-	"github.com/spf13/afero"
 )
 
 // FileNS - the File namespace
@@ -29,7 +30,7 @@ func AddFileFuncs(f map[string]interface{}) {
 func CreateFileFuncs(ctx context.Context) map[string]interface{} {
 	ns := &FileFuncs{
 		ctx: ctx,
-		fs:  afero.NewOsFs(),
+		fs:  datafs.WrapWdFS(hackpadfs.NewOsFS())),
 	}
 	return map[string]interface{}{
 		"file": func() interface{} { return ns },
@@ -48,7 +49,7 @@ func (f *FileFuncs) Read(path interface{}) (string, error) {
 }
 
 // Stat -
-func (f *FileFuncs) Stat(path interface{}) (os.FileInfo, error) {
+func (f *FileFuncs) Stat(path interface{}) (fs.FileInfo, error) {
 	return f.fs.Stat(conv.ToString(path))
 }
 

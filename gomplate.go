@@ -14,6 +14,7 @@ import (
 	hackpados "github.com/hack-pad/hackpadfs/os"
 	"github.com/hairyhenderson/gomplate/v3/data"
 	"github.com/hairyhenderson/gomplate/v3/internal/config"
+	"github.com/hairyhenderson/gomplate/v3/internal/datafs"
 )
 
 // RunTemplates - run all gomplate templates specified by the given configuration
@@ -56,7 +57,7 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	start := time.Now()
 
 	namer := chooseNamer(cfg, tr)
-	fsys, err := wrapWdFS(hackpados.NewFS())
+	fsys, err := datafs.WrapWdFS(hackpados.NewFS())
 	if err != nil {
 		return err
 	}

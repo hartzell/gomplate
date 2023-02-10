@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/hairyhenderson/gomplate/v3/internal/datafs"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +31,8 @@ func TestCreateFileFuncs(t *testing.T) {
 func TestFileExists(t *testing.T) {
 	t.Parallel()
 
-	fs := afero.NewMemMapFs()
+	// fs := afero.NewMemMapFs()
+	fs, _ := datafs.WrapWdFS(hackpadfs.NewOsFS())
 	ff := &FileFuncs{fs: fs}
 
 	_ = fs.Mkdir("/tmp", 0777)
